@@ -63,6 +63,7 @@ app.post('/api/stop', (req, res) => {
     debut: debut.toISOString().slice(0, 16).replace('T', ' '),
     fin: fin.toISOString().slice(0, 16).replace('T', ' '),
     heures: roundedHeures,
+    user: session.user || 'ascher',
     source: 'tracker',
     note: note || ''
   });

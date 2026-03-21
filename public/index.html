@@ -73,6 +73,8 @@ body { font-family:'Segoe UI',sans-serif; background:#0f1117; color:#e0e0e0; min
 .modal-actions { display:flex; gap:10px; margin-top:10px; }
 
 .empty-note { color:#555; font-style:italic; font-size:13px; text-align:center; padding:40px; }
+.btn-person { padding:12px 24px; border:2px solid #2d3142; border-radius:10px; background:#252836; color:#e0e0e0; font-size:15px; font-weight:600; cursor:pointer; transition:all .2s; flex:1; text-align:center; }
+.btn-person:hover { border-color:#6c5ce7; background:rgba(108,92,231,.15); color:#fff; }
 .owner-checkboxes { display:flex; flex-wrap:wrap; gap:8px; }
 .owner-check { display:flex; align-items:center; gap:6px; background:#252836; padding:6px 12px; border-radius:8px; font-size:13px; cursor:pointer; border:1px solid #2d3142; transition:all .2s; }
 .owner-check:has(input:checked) { border-color:#6c5ce7; background:rgba(108,92,231,.15); }
@@ -157,6 +159,18 @@ body { font-family:'Segoe UI',sans-serif; background:#0f1117; color:#e0e0e0; min
     <div class="modal-actions">
       <button class="btn btn-manual" onclick="closeModal()">Annuler</button>
       <button class="btn btn-start" onclick="submitOwners()">Sauvegarder</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal start - choix personne -->
+<div class="modal-overlay" id="modal-start">
+  <div class="modal">
+    <h3>Qui commence ?</h3>
+    <input type="text" id="start-projet" readonly>
+    <div id="start-owners" style="display:flex;flex-wrap:wrap;gap:8px;margin:15px 0;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-manual" onclick="closeModal()">Annuler</button>
     </div>
   </div>
 </div>
@@ -292,7 +306,7 @@ function renderCard(entry, isRunningSection) {
       </div>
       <div class="card-hours">${formatHours(proj.total_heures)}</div>
       <div class="card-period">${getPeriod(proj.sessions)}</div>
-      ${isRunning ? `<div class="card-timer" id="${timerId}">00:00</div>` : ''}
+      ${isRunning ? `<div style="text-align:center;font-size:12px;color:#a29bfe;margin-bottom:4px;">${ownerLabel(data._active[name].user || 'ascher')} en cours...</div><div class="card-timer" id="${timerId}">00:00</div>` : ''}
       <div class="card-actions">
         ${isRunning
           ? `<button class="btn btn-stop" onclick="stopSession('${name}')">Stop</button>`
@@ -327,10 +341,30 @@ function startTimerEl(el, startTime) {
 }
 
 async function startSession(name) {
+  const owners = getOwners(name);
+  if (owners.length > 1) {
+    // Show choice modal
+    document.getElementById('start-projet').value = name;
+    const container = document.getElementById('start-owners');
+    container.innerHTML = owners.map(o =>
+      `<button class="btn-person" onclick="confirmStart('${name}','${o}')">${ownerLabel(o)}</button>`
+    ).join('');
+    document.getElementById('modal-start').classList.add('show');
+    return;
+  }
+  await doStart(name, owners[0]);
+}
+
+async function confirmStart(name, user) {
+  closeModal();
+  await doStart(name, user);
+}
+
+async function doStart(name, user) {
   await fetch('/api/start', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ projet: name })
+    body: JSON.stringify({ projet: name, user })
   });
   await loadData();
 }
