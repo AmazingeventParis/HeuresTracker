@@ -1,0 +1,11 @@
+services:
+  app:
+    build: .
+    ports:
+      - "80:80"
+    volumes:
+      - heures-data:/data
+
+volumes:
+  heures-data:
+    external: false
