@@ -113,5 +113,25 @@ app.post('/api/manual', (req, res) => {
   res.json({ ok: true, total: data.projets[projet].total_heures });
 });
 
+// Delete last session of a project
+app.post('/api/delete-session', (req, res) => {
+  const { projet, index } = req.body;
+  if (!projet) return res.status(400).json({ error: 'projet requis' });
+
+  const data = readData();
+  if (!data.projets[projet]) return res.status(404).json({ error: 'projet inconnu' });
+
+  const sessions = data.projets[projet].sessions;
+  const idx = index !== undefined ? index : sessions.length - 1;
+  if (idx < 0 || idx >= sessions.length) return res.status(400).json({ error: 'index invalide' });
+
+  const removed = sessions.splice(idx, 1)[0];
+  data.projets[projet].total_heures = Math.round((data.projets[projet].total_heures - removed.heures) * 10) / 10;
+  if (data.projets[projet].total_heures < 0) data.projets[projet].total_heures = 0;
+
+  writeData(data);
+  res.json({ ok: true, removed, total: data.projets[projet].total_heures });
+});
+
 const PORT = process.env.PORT || 80;
 app.listen(PORT, () => console.log(`Heures Tracker on port ${PORT}`));
