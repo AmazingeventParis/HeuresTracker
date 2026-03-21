@@ -275,8 +275,12 @@ function render() {
     runDiv.innerHTML = '';
   }
 
-  // All projects sorted by hours desc, skip SEO placeholder
-  const sorted = projects.filter(e => !(e.name === 'SEO' && e.proj.total_heures === 0)).sort((a, b) => b.proj.total_heures - a.proj.total_heures);
+  // All projects sorted by last session date (most recent first)
+  const sorted = projects.filter(e => !(e.name === 'SEO' && e.proj.total_heures === 0)).sort((a, b) => {
+    const lastA = a.proj.sessions.length ? a.proj.sessions[a.proj.sessions.length - 1].debut : '';
+    const lastB = b.proj.sessions.length ? b.proj.sessions[b.proj.sessions.length - 1].debut : '';
+    return lastB.localeCompare(lastA);
+  });
   document.getElementById('all-projects').innerHTML = sorted.map(e => renderCard(e, false)).join('');
 
   // Restart timers for running cards in main list
