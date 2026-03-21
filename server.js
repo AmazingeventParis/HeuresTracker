@@ -48,8 +48,15 @@ app.post('/api/stop', (req, res) => {
   const session = data._active[projet];
   const debut = new Date(session.debut);
   const fin = new Date();
-  const heures = Math.round((fin - debut) / 1000 / 60) / 60; // en heures, arrondi a la minute
-  const roundedHeures = Math.round(heures * 10) / 10;
+  const seconds = (fin - debut) / 1000;
+  if (seconds < 60) {
+    delete data._active[projet];
+    if (Object.keys(data._active).length === 0) delete data._active;
+    writeData(data);
+    return res.json({ ok: true, skipped: true, message: 'Session < 1 min, non enregistree' });
+  }
+  const heures = Math.round(seconds / 60) / 60; // en heures, arrondi a la minute
+  const roundedHeures = Math.max(0.1, Math.round(heures * 10) / 10);
 
   // Add session
   data.projets[projet].sessions.push({
