@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ type: ['application/json', 'text/plain'] }));
 app.use(express.static('public'));
 
 const DATA_FILE = path.join(__dirname, 'data', 'heures.json');
