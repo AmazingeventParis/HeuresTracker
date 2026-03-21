@@ -39,6 +39,7 @@ body { font-family:'Segoe UI',sans-serif; background:#0f1117; color:#e0e0e0; min
 .card-owner { font-size:11px; padding:3px 8px; border-radius:20px; font-weight:600; }
 .card-owner.ascher { background:rgba(108,92,231,.15); color:#a29bfe; }
 .card-owner.vincent { background:rgba(0,206,209,.15); color:#00ced1; }
+.card-owner.autre { background:rgba(255,165,0,.15); color:#ffa500; }
 
 .card-hours { font-size:32px; font-weight:800; color:#6c5ce7; margin-bottom:4px; }
 .card-period { font-size:12px; color:#666; margin-bottom:14px; }
@@ -89,6 +90,7 @@ body { font-family:'Segoe UI',sans-serif; background:#0f1117; color:#e0e0e0; min
   <div class="tab active" data-tab="all">Tous</div>
   <div class="tab" data-tab="ascher">Ascher</div>
   <div class="tab" data-tab="vincent">Vincent</div>
+  <div class="tab" data-tab="autre">Autre</div>
 </div>
 
 <div class="container">
@@ -133,9 +135,9 @@ body { font-family:'Segoe UI',sans-serif; background:#0f1117; color:#e0e0e0; min
 const OWNERS = {
   'Admin':'ascher','Shootnbox-static':'ascher','Jeu puzzle':'ascher','ReservationV3':'ascher',
   'Cypto':'ascher','Tracking System':'ascher','Comparateur':'ascher','Kooki':'ascher',
-  'Upload':'ascher','Freqtrade':'ascher','InfraAPI':'ascher','Agenda':'ascher','Aide':'ascher',
-  'Alice':'ascher','joja-distribution':'ascher','SEO':'ascher',
-  'OptiTourBooth':'vincent','FocusRacer':'vincent'
+  'Upload':'ascher','Freqtrade':'ascher','InfraAPI':'ascher',
+  'OptiTourBooth':'vincent','FocusRacer':'vincent',
+  'Agenda':'autre','Aide':'autre','Alice':'autre','joja-distribution':'autre','SEO':'autre'
 };
 
 let data = null;
@@ -171,14 +173,15 @@ function getPeriod(sessions) {
 }
 
 function render() {
-  let totalAscher = 0, totalVincent = 0;
+  let totalAscher = 0, totalVincent = 0, totalAutre = 0;
   const running = [];
   const projects = [];
 
   for (const [name, proj] of Object.entries(data.projets)) {
     const owner = getOwner(name);
     if (owner === 'ascher') totalAscher += proj.total_heures;
-    else totalVincent += proj.total_heures;
+    else if (owner === 'vincent') totalVincent += proj.total_heures;
+    else totalAutre += proj.total_heures;
 
     const isRunning = data._active && data._active[name];
     const entry = { name, owner, proj, isRunning, startTime: isRunning ? new Date(data._active[name].debut).getTime() : null };
@@ -189,7 +192,7 @@ function render() {
 
   document.getElementById('total-ascher').textContent = formatHours(totalAscher);
   document.getElementById('total-vincent').textContent = formatHours(totalVincent);
-  document.getElementById('total-all').textContent = formatHours(totalAscher + totalVincent);
+  document.getElementById('total-all').textContent = formatHours(totalAscher + totalVincent + totalAutre);
 
   // Running section
   const runSec = document.getElementById('running-section');
@@ -231,7 +234,7 @@ function renderCard(entry, isRunningSection) {
     <div class="card ${isRunning ? 'running' : ''}" id="card-${id}">
       <div class="card-top">
         <div class="card-name">${name}</div>
-        <div class="card-owner ${owner}">${owner === 'ascher' ? 'Ascher' : 'Vincent'}</div>
+        <div class="card-owner ${owner}">${owner === 'ascher' ? 'Ascher' : owner === 'vincent' ? 'Vincent' : 'Autre'}</div>
       </div>
       <div class="card-hours">${formatHours(proj.total_heures)}</div>
       <div class="card-period">${getPeriod(proj.sessions)}</div>
