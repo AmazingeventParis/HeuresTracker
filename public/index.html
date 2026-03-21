@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tracker Heures</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Segoe UI',sans-serif; background:#0f1117; color:#e0e0e0; min-height:100vh; }
+
+.header { background:linear-gradient(135deg,#1a1d29,#252836); padding:20px 30px; border-bottom:1px solid #2d3142; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px; }
+.header h1 { font-size:24px; font-weight:700; }
+.header h1 span { color:#6c5ce7; }
+.header-stats { display:flex; gap:20px; }
+.header-stat { text-align:center; }
+.header-stat .val { font-size:22px; font-weight:700; color:#6c5ce7; }
+.header-stat .lbl { font-size:11px; color:#888; text-transform:uppercase; }
+
+.tabs { display:flex; gap:0; background:#1a1d29; border-bottom:1px solid #2d3142; padding:0 20px; }
+.tab { padding:12px 24px; cursor:pointer; font-size:14px; font-weight:600; color:#888; border-bottom:2px solid transparent; transition:all .2s; }
+.tab:hover { color:#ccc; }
+.tab.active { color:#6c5ce7; border-bottom-color:#6c5ce7; }
+
+.container { max-width:1200px; margin:0 auto; padding:20px; }
+
+.section-title { font-size:16px; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:1px; margin:25px 0 15px; display:flex; align-items:center; gap:10px; }
+.section-title .line { flex:1; height:1px; background:#2d3142; }
+
+.projects { display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:15px; }
+
+.card { background:#1a1d29; border:1px solid #2d3142; border-radius:12px; padding:18px; transition:all .2s; position:relative; overflow:hidden; }
+.card:hover { border-color:#3d4162; }
+.card.running { border-color:#6c5ce7; box-shadow:0 0 20px rgba(108,92,231,.15); }
+.card.running::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,#6c5ce7,#a29bfe); animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100% { opacity:.6; } 50% { opacity:1; } }
+
+.card-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
+.card-name { font-size:16px; font-weight:700; }
+.card-owner { font-size:11px; padding:3px 8px; border-radius:20px; font-weight:600; }
+.card-owner.ascher { background:rgba(108,92,231,.15); color:#a29bfe; }
+.card-owner.vincent { background:rgba(0,206,209,.15); color:#00ced1; }
+
+.card-hours { font-size:32px; font-weight:800; color:#6c5ce7; margin-bottom:4px; }
+.card-period { font-size:12px; color:#666; margin-bottom:14px; }
+
+.card-timer { font-size:28px; font-weight:700; color:#fd79a8; margin:10px 0; font-variant-numeric:tabular-nums; text-align:center; background:rgba(253,121,168,.08); border-radius:8px; padding:8px; }
+
+.card-actions { display:flex; gap:8px; }
+.btn { padding:8px 16px; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; transition:all .2s; flex:1; }
+.btn:hover { transform:translateY(-1px); }
+.btn-start { background:#6c5ce7; color:#fff; }
+.btn-start:hover { background:#5a4bd1; }
+.btn-stop { background:#fd79a8; color:#fff; }
+.btn-stop:hover { background:#e56793; }
+.btn-manual { background:#2d3142; color:#aaa; }
+.btn-manual:hover { background:#3d4162; color:#fff; }
+
+.card-sessions { margin-top:12px; border-top:1px solid #2d3142; padding-top:10px; max-height:0; overflow:hidden; transition:max-height .3s; }
+.card.show-sessions .card-sessions { max-height:300px; overflow-y:auto; }
+.session-row { display:flex; justify-content:space-between; font-size:12px; padding:4px 0; color:#888; border-bottom:1px solid #1f2233; }
+.session-row .s-hours { color:#6c5ce7; font-weight:600; }
+.toggle-sessions { font-size:11px; color:#666; cursor:pointer; text-align:center; margin-top:8px; }
+.toggle-sessions:hover { color:#aaa; }
+
+/* Modal */
+.modal-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,.6); z-index:100; justify-content:center; align-items:center; }
+.modal-overlay.show { display:flex; }
+.modal { background:#1a1d29; border:1px solid #2d3142; border-radius:14px; padding:25px; width:90%; max-width:400px; }
+.modal h3 { margin-bottom:15px; font-size:18px; }
+.modal input, .modal select, .modal textarea { width:100%; padding:10px 12px; background:#252836; border:1px solid #2d3142; border-radius:8px; color:#e0e0e0; font-size:14px; margin-bottom:10px; }
+.modal textarea { height:60px; resize:vertical; }
+.modal-actions { display:flex; gap:10px; margin-top:10px; }
+
+.empty-note { color:#555; font-style:italic; font-size:13px; text-align:center; padding:40px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span>Heures</span> Tracker</h1>
+  <div class="header-stats">
+    <div class="header-stat"><div class="val" id="total-ascher">—</div><div class="lbl">Ascher Cohen</div></div>
+    <div class="header-stat"><div class="val" id="total-vincent">—</div><div class="lbl">Vincent Picerelle</div></div>
+    <div class="header-stat"><div class="val" id="total-all">—</div><div class="lbl">Total</div></div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="all">Tous</div>
+  <div class="tab" data-tab="ascher">Ascher</div>
+  <div class="tab" data-tab="vincent">Vincent</div>
+</div>
+
+<div class="container">
+  <div id="running-section" style="display:none;">
+    <div class="section-title">En cours <div class="line"></div></div>
+    <div class="projects" id="running-projects"></div>
+  </div>
+
+  <div class="section-title">Projets <div class="line"></div></div>
+  <div class="projects" id="all-projects"></div>
+</div>
+
+<!-- Modal ajout manuel -->
+<div class="modal-overlay" id="modal-manual">
+  <div class="modal">
+    <h3>Ajout manuel</h3>
+    <input type="text" id="manual-projet" readonly>
+    <input type="number" id="manual-heures" placeholder="Heures (ex: 1.5)" step="0.1" min="0.1">
+    <textarea id="manual-note" placeholder="Note (optionnel)"></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-manual" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-start" onclick="submitManual()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal stop -->
+<div class="modal-overlay" id="modal-stop">
+  <div class="modal">
+    <h3>Arreter le timer</h3>
+    <input type="text" id="stop-projet" readonly>
+    <div id="stop-duration" style="font-size:20px;font-weight:700;color:#6c5ce7;text-align:center;margin:10px 0;"></div>
+    <textarea id="stop-note" placeholder="Qu'as-tu fait ? (optionnel)"></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-manual" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-stop" onclick="submitStop()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const OWNERS = {
+  'Admin':'ascher','Shootnbox-static':'ascher','Jeu puzzle':'ascher','ReservationV3':'ascher',
+  'Cypto':'ascher','Tracking System':'ascher','Comparateur':'ascher','Kooki':'ascher',
+  'Upload':'ascher','Freqtrade':'ascher','InfraAPI':'ascher','Agenda':'ascher','Aide':'ascher',
+  'Alice':'ascher','joja-distribution':'ascher','SEO':'ascher',
+  'OptiTourBooth':'vincent','FocusRacer':'vincent'
+};
+
+let data = null;
+let timers = {};
+let currentTab = 'all';
+
+async function loadData() {
+  const r = await fetch('/api/projects');
+  data = await r.json();
+  render();
+}
+
+function getOwner(name) {
+  if (data.projets[name] && data.projets[name].owner) return data.projets[name].owner.toLowerCase();
+  return OWNERS[name] || 'ascher';
+}
+
+function formatHours(h) { return h.toFixed(1) + 'h'; }
+
+function formatTimer(ms) {
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return (h > 0 ? h + ':' : '') + String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+}
+
+function getPeriod(sessions) {
+  if (!sessions || sessions.length === 0) return '';
+  const first = sessions[0].debut.slice(0, 10);
+  const last = sessions[sessions.length - 1].fin ? sessions[sessions.length - 1].fin.slice(0, 10) : sessions[sessions.length - 1].debut.slice(0, 10);
+  return first + ' → ' + last;
+}
+
+function render() {
+  let totalAscher = 0, totalVincent = 0;
+  const running = [];
+  const projects = [];
+
+  for (const [name, proj] of Object.entries(data.projets)) {
+    const owner = getOwner(name);
+    if (owner === 'ascher') totalAscher += proj.total_heures;
+    else totalVincent += proj.total_heures;
+
+    const isRunning = data._active && data._active[name];
+    const entry = { name, owner, proj, isRunning, startTime: isRunning ? new Date(data._active[name].debut).getTime() : null };
+
+    if (isRunning) running.push(entry);
+    if (currentTab === 'all' || currentTab === owner) projects.push(entry);
+  }
+
+  document.getElementById('total-ascher').textContent = formatHours(totalAscher);
+  document.getElementById('total-vincent').textContent = formatHours(totalVincent);
+  document.getElementById('total-all').textContent = formatHours(totalAscher + totalVincent);
+
+  // Running section
+  const runSec = document.getElementById('running-section');
+  const runDiv = document.getElementById('running-projects');
+  if (running.length > 0) {
+    runSec.style.display = '';
+    runDiv.innerHTML = running.map(e => renderCard(e, true)).join('');
+    running.forEach(e => startTimer(e.name, e.startTime));
+  } else {
+    runSec.style.display = 'none';
+    runDiv.innerHTML = '';
+  }
+
+  // All projects sorted by hours desc, skip SEO placeholder
+  const sorted = projects.filter(e => !(e.name === 'SEO' && e.proj.total_heures === 0)).sort((a, b) => b.proj.total_heures - a.proj.total_heures);
+  document.getElementById('all-projects').innerHTML = sorted.map(e => renderCard(e, false)).join('');
+
+  // Restart timers for running cards in main list
+  running.forEach(e => {
+    const el = document.getElementById('timer-main-' + css(e.name));
+    if (el) startTimerEl(el, e.startTime);
+  });
+}
+
+function css(name) { return name.replace(/[^a-zA-Z0-9]/g, '_'); }
+
+function renderCard(entry, isRunningSection) {
+  const { name, owner, proj, isRunning, startTime } = entry;
+  const id = css(name);
+  const timerId = isRunningSection ? 'timer-run-' + id : 'timer-main-' + id;
+
+  let sessionsHtml = '';
+  const last5 = (proj.sessions || []).slice(-5).reverse();
+  last5.forEach(s => {
+    sessionsHtml += `<div class="session-row"><span>${s.debut.slice(0,10)}</span><span>${s.note || s.source || ''}</span><span class="s-hours">${s.heures}h</span></div>`;
+  });
+
+  return `
+    <div class="card ${isRunning ? 'running' : ''}" id="card-${id}">
+      <div class="card-top">
+        <div class="card-name">${name}</div>
+        <div class="card-owner ${owner}">${owner === 'ascher' ? 'Ascher' : 'Vincent'}</div>
+      </div>
+      <div class="card-hours">${formatHours(proj.total_heures)}</div>
+      <div class="card-period">${getPeriod(proj.sessions)}</div>
+      ${isRunning ? `<div class="card-timer" id="${timerId}">00:00</div>` : ''}
+      <div class="card-actions">
+        ${isRunning
+          ? `<button class="btn btn-stop" onclick="stopSession('${name}')">Stop</button>`
+          : `<button class="btn btn-start" onclick="startSession('${name}')">Commencer</button>
+             <button class="btn btn-manual" onclick="openManual('${name}')">+ Manuel</button>`
+        }
+      </div>
+      ${sessionsHtml ? `
+        <div class="toggle-sessions" onclick="this.parentElement.classList.toggle('show-sessions')">Voir les sessions</div>
+        <div class="card-sessions">${sessionsHtml}</div>
+      ` : ''}
+    </div>`;
+}
+
+function startTimer(name, startTime) {
+  const id = css(name);
+  const el1 = document.getElementById('timer-run-' + id);
+  const el2 = document.getElementById('timer-main-' + id);
+  if (el1) startTimerEl(el1, startTime);
+  if (el2) startTimerEl(el2, startTime);
+}
+
+function startTimerEl(el, startTime) {
+  const update = () => {
+    const elapsed = Date.now() - startTime;
+    el.textContent = formatTimer(elapsed);
+  };
+  update();
+  const interval = setInterval(update, 1000);
+  el._interval = interval;
+}
+
+async function startSession(name) {
+  await fetch('/api/start', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ projet: name })
+  });
+  await loadData();
+}
+
+function stopSession(name) {
+  const active = data._active && data._active[name];
+  if (!active) return;
+  const elapsed = Date.now() - new Date(active.debut).getTime();
+  document.getElementById('stop-projet').value = name;
+  document.getElementById('stop-duration').textContent = formatTimer(elapsed);
+  document.getElementById('stop-note').value = '';
+  document.getElementById('modal-stop').classList.add('show');
+}
+
+async function submitStop() {
+  const projet = document.getElementById('stop-projet').value;
+  const note = document.getElementById('stop-note').value;
+  await fetch('/api/stop', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ projet, note })
+  });
+  closeModal();
+  await loadData();
+}
+
+function openManual(name) {
+  document.getElementById('manual-projet').value = name;
+  document.getElementById('manual-heures').value = '';
+  document.getElementById('manual-note').value = '';
+  document.getElementById('modal-manual').classList.add('show');
+}
+
+async function submitManual() {
+  const projet = document.getElementById('manual-projet').value;
+  const heures = document.getElementById('manual-heures').value;
+  const note = document.getElementById('manual-note').value;
+  if (!heures || parseFloat(heures) <= 0) return;
+  await fetch('/api/manual', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ projet, heures, note })
+  });
+  closeModal();
+  await loadData();
+}
+
+function closeModal() {
+  document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('show'));
+}
+
+// Tabs
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentTab = tab.dataset.tab;
+    render();
+  });
+});
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+});
+
+loadData();
+</script>
+</body>
+</html>
