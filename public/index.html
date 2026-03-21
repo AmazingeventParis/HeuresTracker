@@ -588,9 +588,10 @@ function openGlobalStats() {
     });
   }
 
-  const days = Object.keys(dayProjectMap).sort();
+  const days = Object.keys(dayProjectMap).sort().filter(d => d >= '2026-03-21');
+  if (days.length === 0) return alert('Aucune donnee depuis le 21 mars');
   const labels = days.map(d => { const [y, m, dd] = d.split('-'); return dd + '/' + m; });
-  const projects = Array.from(projectSet);
+  const projects = Array.from(projectSet).filter(name => days.some(d => dayProjectMap[d][name]));
 
   // One dataset per project
   const datasets = projects.map((name, i) => ({
