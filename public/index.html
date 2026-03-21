@@ -6,31 +6,32 @@
 <title>Tracker Heures</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:'Segoe UI',sans-serif; background:#0f1117; color:#e0e0e0; min-height:100vh; }
+body { font-family:'Segoe UI',sans-serif; background:#f5f5f7; color:#1a1a2e; min-height:100vh; }
 
-.header { background:linear-gradient(135deg,#1a1d29,#252836); padding:20px 30px; border-bottom:1px solid #2d3142; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px; }
+.header { background:linear-gradient(135deg,#6c5ce7,#a29bfe); padding:20px 30px; border-bottom:1px solid #e0e0e0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px; }
 .header h1 { font-size:24px; font-weight:700; }
-.header h1 span { color:#6c5ce7; }
+.header h1 { color:#fff; }
+.header h1 span { color:#fff; }
 .header-stats { display:flex; gap:20px; }
 .header-stat { text-align:center; }
-.header-stat .val { font-size:22px; font-weight:700; color:#6c5ce7; }
-.header-stat .lbl { font-size:11px; color:#888; text-transform:uppercase; }
+.header-stat .val { font-size:22px; font-weight:700; color:#fff; }
+.header-stat .lbl { font-size:11px; color:rgba(255,255,255,.7); text-transform:uppercase; }
 
-.tabs { display:flex; gap:0; background:#1a1d29; border-bottom:1px solid #2d3142; padding:0 20px; }
-.tab { padding:12px 24px; cursor:pointer; font-size:14px; font-weight:600; color:#888; border-bottom:2px solid transparent; transition:all .2s; }
-.tab:hover { color:#ccc; }
+.tabs { display:flex; gap:0; background:#fff; border-bottom:1px solid #e0e0e0; padding:0 20px; }
+.tab { padding:12px 24px; cursor:pointer; font-size:14px; font-weight:600; color:#999; border-bottom:2px solid transparent; transition:all .2s; }
+.tab:hover { color:#555; }
 .tab.active { color:#6c5ce7; border-bottom-color:#6c5ce7; }
 
 .container { max-width:1200px; margin:0 auto; padding:20px; }
 
-.section-title { font-size:16px; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:1px; margin:25px 0 15px; display:flex; align-items:center; gap:10px; }
-.section-title .line { flex:1; height:1px; background:#2d3142; }
+.section-title { font-size:16px; font-weight:700; color:#999; text-transform:uppercase; letter-spacing:1px; margin:25px 0 15px; display:flex; align-items:center; gap:10px; }
+.section-title .line { flex:1; height:1px; background:#e0e0e0; }
 
 .projects { display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:15px; }
 
-.card { background:#1a1d29; border:1px solid #2d3142; border-radius:12px; padding:18px; transition:all .2s; position:relative; overflow:hidden; }
-.card:hover { border-color:#3d4162; }
-.card.running { border-color:#6c5ce7; box-shadow:0 0 20px rgba(108,92,231,.15); }
+.card { background:#fff; border:1px solid #e8e8ed; border-radius:12px; padding:18px; transition:all .2s; position:relative; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+.card:hover { border-color:#c8c8d0; box-shadow:0 2px 8px rgba(0,0,0,.08); }
+.card.running { border-color:#6c5ce7; box-shadow:0 0 20px rgba(108,92,231,.12); }
 .card.running::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,#6c5ce7,#a29bfe); animation:pulse 2s infinite; }
 @keyframes pulse { 0%,100% { opacity:.6; } 50% { opacity:1; } }
 
@@ -42,9 +43,9 @@ body { font-family:'Segoe UI',sans-serif; background:#0f1117; color:#e0e0e0; min
 .card-owner.autre { background:rgba(255,165,0,.15); color:#ffa500; }
 
 .card-hours { font-size:32px; font-weight:800; color:#6c5ce7; margin-bottom:4px; }
-.card-period { font-size:12px; color:#666; margin-bottom:14px; }
+.card-period { font-size:12px; color:#999; margin-bottom:14px; }
 
-.card-timer { font-size:28px; font-weight:700; color:#fd79a8; margin:10px 0; font-variant-numeric:tabular-nums; text-align:center; background:rgba(253,121,168,.08); border-radius:8px; padding:8px; }
+.card-timer { font-size:28px; font-weight:700; color:#fd79a8; margin:10px 0; font-variant-numeric:tabular-nums; text-align:center; background:rgba(253,121,168,.06); border-radius:8px; padding:8px; }
 
 .card-actions { display:flex; gap:8px; }
 .btn { padding:8px 16px; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; transition:all .2s; flex:1; }
@@ -53,35 +54,35 @@ body { font-family:'Segoe UI',sans-serif; background:#0f1117; color:#e0e0e0; min
 .btn-start:hover { background:#5a4bd1; }
 .btn-stop { background:#fd79a8; color:#fff; }
 .btn-stop:hover { background:#e56793; }
-.btn-manual { background:#2d3142; color:#aaa; }
-.btn-manual:hover { background:#3d4162; color:#fff; }
+.btn-manual { background:#f0f0f5; color:#666; }
+.btn-manual:hover { background:#e0e0e8; color:#333; }
 
-.card-sessions { margin-top:12px; border-top:1px solid #2d3142; padding-top:10px; max-height:0; overflow:hidden; transition:max-height .3s; }
+.card-sessions { margin-top:12px; border-top:1px solid #e8e8ed; padding-top:10px; max-height:0; overflow:hidden; transition:max-height .3s; }
 .card.show-sessions .card-sessions { max-height:300px; overflow-y:auto; }
-.session-row { display:flex; justify-content:space-between; font-size:12px; padding:4px 0; color:#888; border-bottom:1px solid #1f2233; }
+.session-row { display:flex; justify-content:space-between; font-size:12px; padding:4px 0; color:#888; border-bottom:1px solid #f0f0f5; }
 .session-row .s-hours { color:#6c5ce7; font-weight:600; }
-.toggle-sessions { font-size:11px; color:#666; cursor:pointer; text-align:center; margin-top:8px; }
-.toggle-sessions:hover { color:#aaa; }
+.toggle-sessions { font-size:11px; color:#999; cursor:pointer; text-align:center; margin-top:8px; }
+.toggle-sessions:hover { color:#555; }
 
 /* Modal */
-.modal-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,.6); z-index:100; justify-content:center; align-items:center; }
+.modal-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,.3); z-index:100; justify-content:center; align-items:center; }
 .modal-overlay.show { display:flex; }
-.modal { background:#1a1d29; border:1px solid #2d3142; border-radius:14px; padding:25px; width:90%; max-width:400px; }
+.modal { background:#fff; border:1px solid #e0e0e0; border-radius:14px; padding:25px; width:90%; max-width:400px; box-shadow:0 8px 30px rgba(0,0,0,.12); }
 .modal h3 { margin-bottom:15px; font-size:18px; }
-.modal input, .modal select, .modal textarea { width:100%; padding:10px 12px; background:#252836; border:1px solid #2d3142; border-radius:8px; color:#e0e0e0; font-size:14px; margin-bottom:10px; }
+.modal input, .modal select, .modal textarea { width:100%; padding:10px 12px; background:#f5f5f7; border:1px solid #e0e0e0; border-radius:8px; color:#1a1a2e; font-size:14px; margin-bottom:10px; }
 .modal textarea { height:60px; resize:vertical; }
 .modal-actions { display:flex; gap:10px; margin-top:10px; }
 
-.empty-note { color:#555; font-style:italic; font-size:13px; text-align:center; padding:40px; }
+.empty-note { color:#999; font-style:italic; font-size:13px; text-align:center; padding:40px; }
 .card-user-hours { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px; }
 .user-hours-tag { font-size:11px; padding:3px 8px; border-radius:12px; font-weight:600; }
 .user-hours-tag.ascher { background:rgba(108,92,231,.15); color:#a29bfe; }
 .user-hours-tag.vincent { background:rgba(0,206,209,.15); color:#00ced1; }
 .user-hours-tag.autre { background:rgba(255,165,0,.15); color:#ffa500; }
-.btn-person { padding:12px 24px; border:2px solid #2d3142; border-radius:10px; background:#252836; color:#e0e0e0; font-size:15px; font-weight:600; cursor:pointer; transition:all .2s; flex:1; text-align:center; }
-.btn-person:hover { border-color:#6c5ce7; background:rgba(108,92,231,.15); color:#fff; }
+.btn-person { padding:12px 24px; border:2px solid #e0e0e0; border-radius:10px; background:#f5f5f7; color:#1a1a2e; font-size:15px; font-weight:600; cursor:pointer; transition:all .2s; flex:1; text-align:center; }
+.btn-person:hover { border-color:#6c5ce7; background:rgba(108,92,231,.1); color:#6c5ce7; }
 .owner-checkboxes { display:flex; flex-wrap:wrap; gap:8px; }
-.owner-check { display:flex; align-items:center; gap:6px; background:#252836; padding:6px 12px; border-radius:8px; font-size:13px; cursor:pointer; border:1px solid #2d3142; transition:all .2s; }
+.owner-check { display:flex; align-items:center; gap:6px; background:#f5f5f7; padding:6px 12px; border-radius:8px; font-size:13px; cursor:pointer; border:1px solid #e0e0e0; transition:all .2s; }
 .owner-check:has(input:checked) { border-color:#6c5ce7; background:rgba(108,92,231,.15); }
 .owner-check input { accent-color:#6c5ce7; }
 </style>
