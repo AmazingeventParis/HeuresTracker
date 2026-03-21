@@ -133,5 +133,20 @@ app.post('/api/delete-session', (req, res) => {
   res.json({ ok: true, removed, total: data.projets[projet].total_heures });
 });
 
+// Update project owners
+app.post('/api/update-owners', (req, res) => {
+  const { projet, owners } = req.body;
+  if (!projet || !owners || !Array.isArray(owners) || owners.length === 0) return res.status(400).json({ error: 'projet et owners requis' });
+
+  const data = readData();
+  if (!data.projets[projet]) return res.status(404).json({ error: 'projet inconnu' });
+
+  data.projets[projet].owners = owners;
+  // Clean old owner field if exists
+  delete data.projets[projet].owner;
+  writeData(data);
+  res.json({ ok: true, owners });
+});
+
 const PORT = process.env.PORT || 80;
 app.listen(PORT, () => console.log(`Heures Tracker on port ${PORT}`));

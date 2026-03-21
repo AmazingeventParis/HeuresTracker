@@ -144,6 +144,23 @@ body { font-family:'Segoe UI',sans-serif; background:#0f1117; color:#e0e0e0; min
   </div>
 </div>
 
+<!-- Modal edit owners -->
+<div class="modal-overlay" id="modal-owners">
+  <div class="modal">
+    <h3>Membres du projet</h3>
+    <input type="text" id="owners-projet" readonly>
+    <div class="owner-checkboxes" id="owners-checkboxes"></div>
+    <div style="margin-top:8px;">
+      <input type="text" id="owners-custom" placeholder="Ajouter une personne" style="margin-bottom:0;">
+      <button class="btn btn-manual" style="margin-top:6px;padding:5px 12px;font-size:12px;" onclick="addCustomOwnerEdit()">+ Ajouter</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-manual" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-start" onclick="submitOwners()">Sauvegarder</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal stop -->
 <div class="modal-overlay" id="modal-stop">
   <div class="modal">
@@ -280,7 +297,8 @@ function renderCard(entry, isRunningSection) {
         ${isRunning
           ? `<button class="btn btn-stop" onclick="stopSession('${name}')">Stop</button>`
           : `<button class="btn btn-start" onclick="startSession('${name}')">Commencer</button>
-             <button class="btn btn-manual" onclick="openManual('${name}')">+ Manuel</button>`
+             <button class="btn btn-manual" onclick="openManual('${name}')">+ Manuel</button>
+             <button class="btn btn-manual" onclick="openOwners('${name}')" style="flex:none;padding:8px 10px;" title="Membres">&#128101;</button>`
         }
       </div>
       ${sessionsHtml ? `
@@ -412,6 +430,57 @@ async function submitNewProject() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ nom, owners })
+  });
+  const json = await r.json();
+  if (json.error) return alert(json.error);
+  closeModal();
+  await loadData();
+}
+
+function openOwners(name) {
+  document.getElementById('owners-projet').value = name;
+  document.getElementById('owners-custom').value = '';
+  const container = document.getElementById('owners-checkboxes');
+  const currentOwners = getOwners(name);
+
+  // Collect all known owners
+  const allOwners = new Set(['ascher', 'vincent']);
+  currentOwners.forEach(o => allOwners.add(o));
+  // Also add owners from all projects
+  for (const [n, p] of Object.entries(data.projets)) {
+    (p.owners || [p.owner || 'ascher']).forEach(o => allOwners.add(o.toLowerCase()));
+  }
+
+  container.innerHTML = '';
+  allOwners.forEach(o => {
+    const checked = currentOwners.includes(o) ? 'checked' : '';
+    const label = ownerLabel(o);
+    container.innerHTML += `<label class="owner-check"><input type="checkbox" value="${o}" ${checked}> ${label}</label>`;
+  });
+  document.getElementById('modal-owners').classList.add('show');
+}
+
+function addCustomOwnerEdit() {
+  const input = document.getElementById('owners-custom');
+  const name = input.value.trim();
+  if (!name) return;
+  const container = document.getElementById('owners-checkboxes');
+  const val = name.toLowerCase();
+  if (container.querySelector(`input[value="${val}"]`)) { input.value = ''; return; }
+  container.innerHTML += `<label class="owner-check"><input type="checkbox" value="${val}" checked> ${name}</label>`;
+  input.value = '';
+}
+
+async function submitOwners() {
+  const projet = document.getElementById('owners-projet').value;
+  const checks = document.querySelectorAll('#owners-checkboxes input:checked');
+  const owners = Array.from(checks).map(c => c.value);
+  if (owners.length === 0) return alert('Selectionne au moins une personne');
+
+  const r = await fetch('/api/update-owners', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ projet, owners })
   });
   const json = await r.json();
   if (json.error) return alert(json.error);
