@@ -122,6 +122,7 @@ body { font-family:'Segoe UI',sans-serif; background:#f5f5f7; color:#1a1a2e; min
   <div class="modal">
     <h3>Ajout manuel</h3>
     <input type="text" id="manual-projet" readonly>
+    <select id="manual-user"></select>
     <input type="number" id="manual-heures" placeholder="Heures (ex: 1.5)" step="0.1" min="0.1">
     <textarea id="manual-note" placeholder="Note (optionnel)"></textarea>
     <div class="modal-actions">
@@ -435,6 +436,9 @@ function openManual(name) {
   document.getElementById('manual-projet').value = name;
   document.getElementById('manual-heures').value = '';
   document.getElementById('manual-note').value = '';
+  const sel = document.getElementById('manual-user');
+  const owners = getOwners(name);
+  sel.innerHTML = owners.map(o => `<option value="${o}">${ownerLabel(o)}</option>`).join('');
   document.getElementById('modal-manual').classList.add('show');
 }
 
@@ -446,7 +450,7 @@ async function submitManual() {
   await fetch('/api/manual', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ projet, heures, note })
+    body: JSON.stringify({ projet, heures, note, user: document.getElementById('manual-user').value })
   });
   closeModal();
   await loadData();

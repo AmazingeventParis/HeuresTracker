@@ -96,7 +96,7 @@ app.post('/api/project', (req, res) => {
 
 // Manual time entry
 app.post('/api/manual', (req, res) => {
-  const { projet, heures, note } = req.body;
+  const { projet, heures, note, user } = req.body;
   if (!projet || !heures) return res.status(400).json({ error: 'projet et heures requis' });
 
   const data = readData();
@@ -106,7 +106,7 @@ app.post('/api/manual', (req, res) => {
   const h = Math.round(parseFloat(heures) * 10) / 10;
 
   data.projets[projet].sessions.push({
-    debut: now, fin: now, heures: h, source: 'manual', note: note || ''
+    debut: now, fin: now, heures: h, user: user || 'ascher', source: 'manual', note: note || ''
   });
   data.projets[projet].total_heures = Math.round((data.projets[projet].total_heures + h) * 10) / 10;
 
