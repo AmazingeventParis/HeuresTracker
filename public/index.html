@@ -73,6 +73,11 @@ body { font-family:'Segoe UI',sans-serif; background:#0f1117; color:#e0e0e0; min
 .modal-actions { display:flex; gap:10px; margin-top:10px; }
 
 .empty-note { color:#555; font-style:italic; font-size:13px; text-align:center; padding:40px; }
+.card-user-hours { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px; }
+.user-hours-tag { font-size:11px; padding:3px 8px; border-radius:12px; font-weight:600; }
+.user-hours-tag.ascher { background:rgba(108,92,231,.15); color:#a29bfe; }
+.user-hours-tag.vincent { background:rgba(0,206,209,.15); color:#00ced1; }
+.user-hours-tag.autre { background:rgba(255,165,0,.15); color:#ffa500; }
 .btn-person { padding:12px 24px; border:2px solid #2d3142; border-radius:10px; background:#252836; color:#e0e0e0; font-size:15px; font-weight:600; cursor:pointer; transition:all .2s; flex:1; text-align:center; }
 .btn-person:hover { border-color:#6c5ce7; background:rgba(108,92,231,.15); color:#fff; }
 .owner-checkboxes { display:flex; flex-wrap:wrap; gap:8px; }
@@ -282,6 +287,20 @@ function render() {
 
 function css(name) { return name.replace(/[^a-zA-Z0-9]/g, '_'); }
 
+function renderUserHours(proj, owners) {
+  const userTotals = {};
+  owners.forEach(o => userTotals[o] = 0);
+  (proj.sessions || []).forEach(s => {
+    const u = (s.user || '').toLowerCase();
+    if (u && userTotals[u] !== undefined) userTotals[u] += s.heures;
+    else if (u) userTotals[u] = s.heures;
+  });
+  return owners.map(o => {
+    const h = userTotals[o] || 0;
+    return `<span class="user-hours-tag ${ownerClass(o)}">${ownerLabel(o)}: ${formatHours(h)}</span>`;
+  }).join('');
+}
+
 function ownerLabel(o) { return o === 'ascher' ? 'Ascher' : o === 'vincent' ? 'Vincent' : o.charAt(0).toUpperCase() + o.slice(1); }
 function ownerClass(o) { return o === 'ascher' ? 'ascher' : o === 'vincent' ? 'vincent' : 'autre'; }
 
@@ -305,6 +324,7 @@ function renderCard(entry, isRunningSection) {
         <div style="display:flex;gap:4px;">${badgesHtml}</div>
       </div>
       <div class="card-hours">${formatHours(proj.total_heures)}</div>
+      ${owners.length > 1 ? `<div class="card-user-hours">${renderUserHours(proj, owners)}</div>` : ''}
       <div class="card-period">${getPeriod(proj.sessions)}</div>
       ${isRunning ? `<div style="text-align:center;font-size:12px;color:#a29bfe;margin-bottom:4px;">${ownerLabel(data._active[name].user || 'ascher')} en cours...</div><div class="card-timer" id="${timerId}">00:00</div>` : ''}
       <div class="card-actions">
