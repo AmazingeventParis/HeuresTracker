@@ -73,6 +73,10 @@ body { font-family:'Segoe UI',sans-serif; background:#0f1117; color:#e0e0e0; min
 .modal-actions { display:flex; gap:10px; margin-top:10px; }
 
 .empty-note { color:#555; font-style:italic; font-size:13px; text-align:center; padding:40px; }
+.owner-checkboxes { display:flex; flex-wrap:wrap; gap:8px; }
+.owner-check { display:flex; align-items:center; gap:6px; background:#252836; padding:6px 12px; border-radius:8px; font-size:13px; cursor:pointer; border:1px solid #2d3142; transition:all .2s; }
+.owner-check:has(input:checked) { border-color:#6c5ce7; background:rgba(108,92,231,.15); }
+.owner-check input { accent-color:#6c5ce7; }
 </style>
 </head>
 <body>
@@ -99,7 +103,7 @@ body { font-family:'Segoe UI',sans-serif; background:#0f1117; color:#e0e0e0; min
     <div class="projects" id="running-projects"></div>
   </div>
 
-  <div class="section-title">Projets <div class="line"></div></div>
+  <div class="section-title">Projets <div class="line"></div> <button class="btn btn-start" style="flex:none;padding:6px 14px;font-size:12px;" onclick="openNewProject()">+ Nouveau projet</button></div>
   <div class="projects" id="all-projects"></div>
 </div>
 
@@ -113,6 +117,29 @@ body { font-family:'Segoe UI',sans-serif; background:#0f1117; color:#e0e0e0; min
     <div class="modal-actions">
       <button class="btn btn-manual" onclick="closeModal()">Annuler</button>
       <button class="btn btn-start" onclick="submitManual()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal nouveau projet -->
+<div class="modal-overlay" id="modal-newproject">
+  <div class="modal">
+    <h3>Nouveau projet</h3>
+    <input type="text" id="new-projet-nom" placeholder="Nom du projet">
+    <div style="margin-bottom:10px;">
+      <div style="font-size:13px;color:#888;margin-bottom:8px;">Qui travaille dessus ?</div>
+      <div class="owner-checkboxes">
+        <label class="owner-check"><input type="checkbox" value="ascher" checked> Ascher</label>
+        <label class="owner-check"><input type="checkbox" value="vincent"> Vincent</label>
+      </div>
+      <div style="margin-top:8px;">
+        <input type="text" id="new-owner-custom" placeholder="Ajouter une personne (optionnel)" style="margin-bottom:0;">
+        <button class="btn btn-manual" style="margin-top:6px;padding:5px 12px;font-size:12px;" onclick="addCustomOwner()">+ Ajouter</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-manual" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-start" onclick="submitNewProject()">Creer</button>
     </div>
   </div>
 </div>
@@ -150,10 +177,15 @@ async function loadData() {
   render();
 }
 
-function getOwner(name) {
-  if (data.projets[name] && data.projets[name].owner) return data.projets[name].owner.toLowerCase();
-  return OWNERS[name] || 'ascher';
+function getOwners(name) {
+  const proj = data.projets[name];
+  if (proj && proj.owners) return proj.owners.map(o => o.toLowerCase());
+  if (proj && proj.owner) return [proj.owner.toLowerCase()];
+  if (OWNERS[name]) return [OWNERS[name]];
+  return ['ascher'];
 }
+
+function getOwner(name) { return getOwners(name)[0]; }
 
 function formatHours(h) { return h.toFixed(1) + 'h'; }
 
@@ -178,16 +210,16 @@ function render() {
   const projects = [];
 
   for (const [name, proj] of Object.entries(data.projets)) {
-    const owner = getOwner(name);
-    if (owner === 'ascher') totalAscher += proj.total_heures;
-    else if (owner === 'vincent') totalVincent += proj.total_heures;
-    else totalAutre += proj.total_heures;
+    const owners = getOwners(name);
+    if (owners.includes('ascher')) totalAscher += proj.total_heures;
+    if (owners.includes('vincent')) totalVincent += proj.total_heures;
+    if (!owners.includes('ascher') && !owners.includes('vincent')) totalAutre += proj.total_heures;
 
     const isRunning = data._active && data._active[name];
-    const entry = { name, owner, proj, isRunning, startTime: isRunning ? new Date(data._active[name].debut).getTime() : null };
+    const entry = { name, owners, proj, isRunning, startTime: isRunning ? new Date(data._active[name].debut).getTime() : null };
 
     if (isRunning) running.push(entry);
-    if (currentTab === 'all' || currentTab === owner) projects.push(entry);
+    if (currentTab === 'all' || owners.includes(currentTab) || (currentTab === 'autre' && !owners.includes('ascher') && !owners.includes('vincent'))) projects.push(entry);
   }
 
   document.getElementById('total-ascher').textContent = formatHours(totalAscher);
@@ -219,8 +251,11 @@ function render() {
 
 function css(name) { return name.replace(/[^a-zA-Z0-9]/g, '_'); }
 
+function ownerLabel(o) { return o === 'ascher' ? 'Ascher' : o === 'vincent' ? 'Vincent' : o.charAt(0).toUpperCase() + o.slice(1); }
+function ownerClass(o) { return o === 'ascher' ? 'ascher' : o === 'vincent' ? 'vincent' : 'autre'; }
+
 function renderCard(entry, isRunningSection) {
-  const { name, owner, proj, isRunning, startTime } = entry;
+  const { name, owners, proj, isRunning, startTime } = entry;
   const id = css(name);
   const timerId = isRunningSection ? 'timer-run-' + id : 'timer-main-' + id;
 
@@ -230,11 +265,13 @@ function renderCard(entry, isRunningSection) {
     sessionsHtml += `<div class="session-row"><span>${s.debut.slice(0,10)}</span><span>${s.note || s.source || ''}</span><span class="s-hours">${s.heures}h</span></div>`;
   });
 
+  const badgesHtml = owners.map(o => `<div class="card-owner ${ownerClass(o)}">${ownerLabel(o)}</div>`).join('');
+
   return `
     <div class="card ${isRunning ? 'running' : ''}" id="card-${id}">
       <div class="card-top">
         <div class="card-name">${name}</div>
-        <div class="card-owner ${owner}">${owner === 'ascher' ? 'Ascher' : owner === 'vincent' ? 'Vincent' : 'Autre'}</div>
+        <div style="display:flex;gap:4px;">${badgesHtml}</div>
       </div>
       <div class="card-hours">${formatHours(proj.total_heures)}</div>
       <div class="card-period">${getPeriod(proj.sessions)}</div>
@@ -336,6 +373,51 @@ document.querySelectorAll('.tab').forEach(tab => {
     render();
   });
 });
+
+function openNewProject() {
+  document.getElementById('new-projet-nom').value = '';
+  document.getElementById('new-owner-custom').value = '';
+  // Reset checkboxes to default
+  const container = document.querySelector('#modal-newproject .owner-checkboxes');
+  container.innerHTML = `
+    <label class="owner-check"><input type="checkbox" value="ascher" checked> Ascher</label>
+    <label class="owner-check"><input type="checkbox" value="vincent"> Vincent</label>
+  `;
+  document.getElementById('modal-newproject').classList.add('show');
+}
+
+function addCustomOwner() {
+  const input = document.getElementById('new-owner-custom');
+  const name = input.value.trim();
+  if (!name) return;
+  const container = document.querySelector('#modal-newproject .owner-checkboxes');
+  const val = name.toLowerCase();
+  // Check if already exists
+  if (container.querySelector(`input[value="${val}"]`)) { input.value = ''; return; }
+  const label = document.createElement('label');
+  label.className = 'owner-check';
+  label.innerHTML = `<input type="checkbox" value="${val}" checked> ${name}`;
+  container.appendChild(label);
+  input.value = '';
+}
+
+async function submitNewProject() {
+  const nom = document.getElementById('new-projet-nom').value.trim();
+  if (!nom) return;
+  const checks = document.querySelectorAll('#modal-newproject .owner-checkboxes input:checked');
+  const owners = Array.from(checks).map(c => c.value);
+  if (owners.length === 0) return alert('Selectionne au moins une personne');
+
+  const r = await fetch('/api/project', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nom, owners })
+  });
+  const json = await r.json();
+  if (json.error) return alert(json.error);
+  closeModal();
+  await loadData();
+}
 
 // Close modals on overlay click
 document.querySelectorAll('.modal-overlay').forEach(overlay => {

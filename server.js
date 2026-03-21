@@ -75,9 +75,9 @@ app.post('/api/stop', (req, res) => {
   res.json({ ok: true, heures: roundedHeures, total: data.projets[projet].total_heures });
 });
 
-// Add a new project
+// Add a new project (owners can be array or string)
 app.post('/api/project', (req, res) => {
-  const { nom, dossier, owner } = req.body;
+  const { nom, dossier, owners } = req.body;
   if (!nom) return res.status(400).json({ error: 'nom requis' });
 
   const data = readData();
@@ -86,7 +86,7 @@ app.post('/api/project', (req, res) => {
   data.projets[nom] = {
     dossier: dossier || '',
     total_heures: 0,
-    owner: owner || 'Ascher',
+    owners: owners || ['ascher'],
     sessions: []
   };
   writeData(data);
