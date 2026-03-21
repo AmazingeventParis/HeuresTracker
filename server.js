@@ -6,22 +6,17 @@ const app = express();
 app.use(express.json());
 app.use(express.static('public'));
 
-const VOLUME_DIR = '/data';
-const DATA_FILE = path.join(VOLUME_DIR, 'heures.json');
+const PERSIST_DIR = path.join(__dirname, 'persist');
+const DATA_FILE = path.join(PERSIST_DIR, 'heures.json');
 const SEED_FILE = path.join(__dirname, 'data', 'heures.json');
 
-// On startup: copy seed data to volume only if volume file doesn't exist
-console.log('Checking data file at:', DATA_FILE);
-console.log('/data exists:', fs.existsSync(VOLUME_DIR));
-console.log('/data contents:', fs.existsSync(VOLUME_DIR) ? fs.readdirSync(VOLUME_DIR) : 'N/A');
+// On startup: seed persist dir from data/ if needed
 if (!fs.existsSync(DATA_FILE)) {
-  fs.mkdirSync(VOLUME_DIR, { recursive: true });
+  fs.mkdirSync(PERSIST_DIR, { recursive: true });
   fs.copyFileSync(SEED_FILE, DATA_FILE);
-  console.log('Initialized data from seed file');
+  console.log('Seeded data from', SEED_FILE);
 } else {
-  console.log('Using existing data from volume');
-  const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-  console.log('Projects in volume:', Object.keys(data.projets).join(', '));
+  console.log('Using persisted data from', DATA_FILE);
 }
 
 function readData() {
