@@ -11,12 +11,17 @@ const DATA_FILE = path.join(VOLUME_DIR, 'heures.json');
 const SEED_FILE = path.join(__dirname, 'data', 'heures.json');
 
 // On startup: copy seed data to volume only if volume file doesn't exist
+console.log('Checking data file at:', DATA_FILE);
+console.log('/data exists:', fs.existsSync(VOLUME_DIR));
+console.log('/data contents:', fs.existsSync(VOLUME_DIR) ? fs.readdirSync(VOLUME_DIR) : 'N/A');
 if (!fs.existsSync(DATA_FILE)) {
   fs.mkdirSync(VOLUME_DIR, { recursive: true });
   fs.copyFileSync(SEED_FILE, DATA_FILE);
   console.log('Initialized data from seed file');
 } else {
   console.log('Using existing data from volume');
+  const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+  console.log('Projects in volume:', Object.keys(data.projets).join(', '));
 }
 
 function readData() {
