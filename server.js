@@ -6,7 +6,18 @@ const app = express();
 app.use(express.json());
 app.use(express.static('public'));
 
-const DATA_FILE = path.join(__dirname, 'data', 'heures.json');
+const VOLUME_DIR = '/data';
+const DATA_FILE = path.join(VOLUME_DIR, 'heures.json');
+const SEED_FILE = path.join(__dirname, 'data', 'heures.json');
+
+// On startup: copy seed data to volume only if volume file doesn't exist
+if (!fs.existsSync(DATA_FILE)) {
+  fs.mkdirSync(VOLUME_DIR, { recursive: true });
+  fs.copyFileSync(SEED_FILE, DATA_FILE);
+  console.log('Initialized data from seed file');
+} else {
+  console.log('Using existing data from volume');
+}
 
 function readData() {
   return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
