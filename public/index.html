@@ -97,6 +97,7 @@ body { font-family:'Segoe UI',sans-serif; background:#f5f5f7; color:#1a1a2e; min
     <div class="header-stat"><div class="val" id="total-vincent">—</div><div class="lbl">Vincent Picerelle</div></div>
     <div class="header-stat"><div class="val" id="total-all">—</div><div class="lbl">Total</div></div>
   </div>
+  <button class="btn" onclick="openGlobalStats()" style="background:rgba(255,255,255,.2);color:#fff;flex:none;padding:8px 14px;font-size:16px;" title="Stats globales">&#128202;</button>
 </div>
 
 <div class="tabs">
@@ -562,6 +563,68 @@ async function submitOwners() {
 }
 
 let statsChart = null;
+
+const CHART_COLORS = [
+  '#6c5ce7','#fd79a8','#00cec9','#fdcb6e','#e17055','#0984e3',
+  '#55efc4','#a29bfe','#ffeaa7','#fab1a0','#74b9ff','#81ecec',
+  '#ff7675','#636e72','#dfe6e9','#b2bec3','#00b894','#e84393'
+];
+
+function openGlobalStats() {
+  document.getElementById('stats-title').textContent = 'Statistiques globales — Heures par jour';
+
+  // Collect all days and all projects that have sessions
+  const dayProjectMap = {}; // { day: { project: hours } }
+  const projectSet = new Set();
+
+  for (const [name, proj] of Object.entries(data.projets)) {
+    if (!proj.sessions || proj.sessions.length === 0) continue;
+    proj.sessions.forEach(s => {
+      const day = s.debut.slice(0, 10);
+      if (!dayProjectMap[day]) dayProjectMap[day] = {};
+      if (!dayProjectMap[day][name]) dayProjectMap[day][name] = 0;
+      dayProjectMap[day][name] += s.heures;
+      projectSet.add(name);
+    });
+  }
+
+  const days = Object.keys(dayProjectMap).sort();
+  const labels = days.map(d => { const [y, m, dd] = d.split('-'); return dd + '/' + m; });
+  const projects = Array.from(projectSet);
+
+  // One dataset per project
+  const datasets = projects.map((name, i) => ({
+    label: name,
+    data: days.map(d => Math.round((dayProjectMap[d][name] || 0) * 10) / 10),
+    backgroundColor: CHART_COLORS[i % CHART_COLORS.length],
+    borderRadius: 2
+  }));
+
+  if (statsChart) { statsChart.destroy(); statsChart = null; }
+
+  const ctx = document.getElementById('stats-chart').getContext('2d');
+  statsChart = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y + 'h'
+          }
+        }
+      },
+      scales: {
+        x: { stacked: true, title: { display: true, text: 'Jour' } },
+        y: { stacked: true, beginAtZero: true, title: { display: true, text: 'Heures' }, ticks: { callback: v => v + 'h' } }
+      }
+    }
+  });
+
+  document.getElementById('modal-stats').classList.add('show');
+}
 
 function openStats(name) {
   const proj = data.projets[name];
