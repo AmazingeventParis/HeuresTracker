@@ -289,15 +289,15 @@ function css(name) { return name.replace(/[^a-zA-Z0-9]/g, '_'); }
 
 function renderUserHours(proj, owners) {
   const userTotals = {};
-  owners.forEach(o => userTotals[o] = 0);
   (proj.sessions || []).forEach(s => {
     const u = (s.user || '').toLowerCase();
-    if (u && userTotals[u] !== undefined) userTotals[u] += s.heures;
-    else if (u) userTotals[u] = s.heures;
+    if (u) userTotals[u] = (userTotals[u] || 0) + s.heures;
   });
-  return owners.map(o => {
-    const h = userTotals[o] || 0;
-    return `<span class="user-hours-tag ${ownerClass(o)}">${ownerLabel(o)}: ${formatHours(h)}</span>`;
+  // Show all people who have hours (owners + anyone in sessions)
+  const allPeople = new Set([...owners, ...Object.keys(userTotals)]);
+  if (allPeople.size === 0) return '';
+  return Array.from(allPeople).filter(o => (userTotals[o] || 0) > 0).map(o => {
+    return `<span class="user-hours-tag ${ownerClass(o)}">${ownerLabel(o)}: ${formatHours(userTotals[o] || 0)}</span>`;
   }).join('');
 }
 
@@ -312,7 +312,8 @@ function renderCard(entry, isRunningSection) {
   let sessionsHtml = '';
   const last5 = (proj.sessions || []).slice(-5).reverse();
   last5.forEach(s => {
-    sessionsHtml += `<div class="session-row"><span>${s.debut.slice(0,10)}</span><span>${s.note || s.source || ''}</span><span class="s-hours">${s.heures}h</span></div>`;
+    const who = s.user ? ownerLabel(s.user.toLowerCase()) : '';
+    sessionsHtml += `<div class="session-row"><span>${s.debut.slice(0,10)}</span><span style="color:#aaa;">${who}</span><span>${s.note || ''}</span><span class="s-hours">${s.heures}h</span></div>`;
   });
 
   const badgesHtml = owners.map(o => `<div class="card-owner ${ownerClass(o)}">${ownerLabel(o)}</div>`).join('');
@@ -324,7 +325,7 @@ function renderCard(entry, isRunningSection) {
         <div style="display:flex;gap:4px;">${badgesHtml}</div>
       </div>
       <div class="card-hours">${formatHours(proj.total_heures)}</div>
-      ${owners.length > 1 ? `<div class="card-user-hours">${renderUserHours(proj, owners)}</div>` : ''}
+      <div class="card-user-hours">${renderUserHours(proj, owners)}</div>
       <div class="card-period">${getPeriod(proj.sessions)}</div>
       ${isRunning ? `<div style="text-align:center;font-size:12px;color:#a29bfe;margin-bottom:4px;">${ownerLabel(data._active[name].user || 'ascher')} en cours...</div><div class="card-timer" id="${timerId}">00:00</div>` : ''}
       <div class="card-actions">
