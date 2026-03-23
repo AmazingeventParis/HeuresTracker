@@ -700,13 +700,7 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
   overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
 });
 
-// Auto-stop all timers when closing the page
-window.addEventListener('beforeunload', () => {
-  if (!data || !data._active) return;
-  for (const projet of Object.keys(data._active)) {
-    navigator.sendBeacon('/api/stop', JSON.stringify({ projet, note: 'auto-stop (page fermee)' }));
-  }
-});
+// Timer survit au refresh — stop uniquement manuel
 
 loadData();
 </script>
